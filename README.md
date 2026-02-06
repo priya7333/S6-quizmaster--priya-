@@ -1,4 +1,3 @@
-
 # QuizMaster
 
 A lightweight quiz application for creating, running, and reviewing quizzes.

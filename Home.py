@@ -2,6 +2,71 @@ import streamlit as st
 import json
 import os
 from pathlib import Path
+import hashlib
+import os
+
+user_file = 'users.txt'
+
+def hash_password(password):
+    return hashlib.sha256(password.encode()).hexdigest()
+
+def user_exists(username):
+    if not os.path.exists(user_file):
+        return False
+    with open(user_file, 'r') as f:
+        return any(line.startswith(f"{username}:") for line in f)
+
+def register():
+    st.subheader("Register")
+    username = st.text_input("Enter a username", key="register_username")
+    password = st.text_input("Enter a password", type="password", key="register_password")
+    if st.button("Register"):
+        if user_exists(username):
+            st.error("Username already exists. Please choose a different username.")
+        else:
+            with open(user_file, 'a') as f:
+                f.write(f"{username}:{hash_password(password)}\n")
+            st.success("Registration successful! Please log in.")
+
+def login():
+    st.subheader("Login")
+    username = st.text_input("Enter your username", key="login_username")
+    password = st.text_input("Enter your password", type="password", key="login_password")
+    if st.button("Login"):
+        if not os.path.exists(user_file):
+            st.error("No users registered yet. Please register first.")
+            return
+        hashed_password = hash_password(password)
+        with open(user_file, 'r') as f:
+            for line in f:
+                if line.strip() == f"{username}:{hashed_password}":
+                    st.success("Login successful!")
+                    st.session_state['logged_in'] = True
+                    st.session_state['username'] = username
+                    return
+        st.error("Login failed. Please check your credentials.")
+
+def main():
+    st.title("User Authentication System")
+    if 'logged_in' not in st.session_state:
+        st.session_state['logged_in'] = False
+
+    if st.session_state['logged_in']:
+        st.success(f"Welcome, {st.session_state['username']}!")
+        if st.button("Logout"):
+            st.session_state['logged_in'] = False
+            st.session_state['username'] = ""
+            st.info("You have been logged out.")
+    else:
+        st.sidebar.title("Authentication")
+        auth_option = st.sidebar.radio("Choose an option", ["Login", "Register"])
+        if auth_option == "Login":
+            login()
+        elif auth_option == "Register":
+            register()
+
+if __name__ == "__main__":
+    main()
 
 # Page configuration
 st.set_page_config(
@@ -162,7 +227,7 @@ if player_name:
         st.metric("Your Name", player_name)
 
 else:
-    st.info("👆 Please enter your name to get started!")
+    st.info("👆 Please enter your name to get SIGN UP!")
     
 # Footer
 st.markdown("---")
